@@ -12,12 +12,15 @@ module Searchkick
       :offset_value, :offset, :previous_page, :prev_page, :next_page, :first_page?, :last_page?,
       :out_of_range?, :hits, :response, :to_a, :first
 
+    SUPPORTED_OPTIONS = [:aggs, :body, :body_options, :boost,
+      :boost_by, :boost_by_distance, :boost_where, :conversions, :debug, :emoji, :execute, :explain,
+      :fields, :highlight, :includes, :index_name, :indices_boost, :limit, :load,
+      :match, :misspellings, :offset, :operator, :order, :padding, :page, :per_page, :profile,
+      :request_params, :routing, :select, :similar, :smart_aggs, :suggest, :track, :type, :where,
+      :prefilter_aggs]
+
     def initialize(klass, term = "*", **options)
-      unknown_keywords = options.keys - [:aggs, :body, :body_options, :boost,
-        :boost_by, :boost_by_distance, :boost_where, :conversions, :debug, :emoji, :execute, :explain,
-        :fields, :highlight, :includes, :index_name, :indices_boost, :limit, :load,
-        :match, :misspellings, :offset, :operator, :order, :padding, :page, :per_page, :profile,
-        :request_params, :routing, :select, :similar, :smart_aggs, :suggest, :track, :type, :where]
+      unknown_keywords = options.keys - SUPPORTED_OPTIONS
       raise ArgumentError, "unknown keywords: #{unknown_keywords.join(", ")}" if unknown_keywords.any?
 
       term = term.to_s
@@ -625,7 +628,7 @@ module Searchkick
     end
 
     def set_filters(payload, filters)
-      if options[:aggs]
+      if options[:aggs] && !options[:prefilter_aggs]
         payload[:post_filter] = {
           bool: {
             filter: filters
