@@ -728,7 +728,7 @@ module Searchkick
     end
 
     def set_filters(payload, filters)
-      if options[:facets] || options[:aggs]
+      if (options[:facets] || options[:aggs]) && !options[:prefilter_aggs]
         if below20?
           payload[:filter] = {
             and: filters
