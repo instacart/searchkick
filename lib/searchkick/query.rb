@@ -354,7 +354,7 @@ module Searchkick
                       boost_mode: "replace",
                       query: {
                         match: {
-                          "#{conversions_field}.query" => term
+                          "#{conversions_field}.query" => options[:conversions_term] || term
                         }
                       }
                     }.merge(script_score)
