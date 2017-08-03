@@ -290,7 +290,7 @@ module Searchkick
                   :match
                 end
 
-              shared_options[:operator] = operator if match_type == :match || below50?
+              shared_options[:operator] = operator if match_type == :match
 
               if field == "_all" || field.end_with?(".analyzed")
                 shared_options[:cutoff_frequency] = 0.001 unless operator == "and" || misspellings == false
@@ -306,7 +306,7 @@ module Searchkick
                 qs << shared_options.merge(analyzer: analyzer)
               end
 
-              if misspellings != false && (match_type == :match || below50?)
+              if misspellings != false && match_type == :match
                 qs.concat qs.map { |q| q.except(:cutoff_frequency).merge(fuzziness: edit_distance, prefix_length: prefix_length, max_expansions: max_expansions, boost: factor).merge(transpositions) }
               end
 
@@ -438,22 +438,14 @@ module Searchkick
           payload[:fields] = options[:select] if options[:select] != true
         elsif options[:select_v2]
           if options[:select_v2] == []
-            # intuitively [] makes sense to return no fields, but ES by default returns all fields
-            if below50?
-              payload[:fields] = []
-            else
-              payload[:_source] = false
-            end
+            # intuitively [] makes sense to return no fields, but ES by default returns all fields\
+            payload[:_source] = false
           else
             payload[:_source] = options[:select_v2]
           end
         elsif load
           # don't need any fields since we're going to load them from the DB anyways
-          if below50?
-            payload[:fields] = []
-          else
-            payload[:_source] = false
-          end
+          payload[:_source] = false
         end
 
         if options[:type] || (klass != searchkick_klass && searchkick_index)
@@ -765,7 +757,7 @@ module Searchkick
     # TODO id transformation for arrays
     def set_order(payload)
       order = options[:order].is_a?(Enumerable) ? options[:order] : {options[:order] => :asc}
-      id_field = below50? ? :_id : :_uid
+      id_field = :_id
       payload[:sort] = order.is_a?(Array) ? order : Hash[order.map { |k, v| [k.to_s == "id" ? id_field : k, v] }]
     end
 
@@ -776,11 +768,7 @@ module Searchkick
 
         if field == :or
           value.each do |or_clause|
-            if below50?
-              filters << {or: or_clause.map { |or_statement| {and: where_filters(or_statement)} }}
-            else
-              filters << {bool: {should: or_clause.map { |or_statement| {bool: {filter: where_filters(or_statement)}} }}}
-            end
+            filters << {bool: {should: or_clause.map { |or_statement| {bool: {filter: where_filters(or_statement)}} }}}
           end
         else
           # expand ranges
@@ -874,19 +862,10 @@ module Searchkick
     end
 
     def custom_filter(field, value, factor)
-      if below50?
-        {
-          filter: {
-            and: where_filters(field => value)
-          },
-          boost_factor: factor
-        }
-      else
-        {
-          filter: where_filters(field => value),
-          weight: factor
-        }
-      end
+      {
+        filter: where_filters(field => value),
+        weight: factor
+      }
     end
 
     def boost_filters(boost_by, options = {})
