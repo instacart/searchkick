@@ -862,9 +862,16 @@ module Searchkick
     end
 
     def custom_filter(field, value, factor)
+      # TODO: SWITCH TO ES 5 SYNTAX when all clusters are deployed
+      #   {
+      #     filter: where_filters(field => value),
+      #     weight: factor
+      #   }
       {
-        filter: where_filters(field => value),
-        weight: factor
+        filter: {
+          and: where_filters(field => value)
+        },
+        boost_factor: factor
       }
     end
 
