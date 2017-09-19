@@ -850,7 +850,7 @@ module Searchkick
         if value.any?(&:nil?)
           {bool: {should: [term_filters(field, nil), term_filters(field, value.compact)]}}
         else
-          {in: {field => value}}
+          {terms: {field => value}}
         end
       elsif value.nil?
         {bool: {must_not: {exists: {field: field}}}}
